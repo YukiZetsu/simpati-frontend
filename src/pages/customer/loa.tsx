@@ -1,28 +1,17 @@
 import StudentLayout from '@/layouts/student/student-layout';
-import { usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
-interface Loa {
-    id: number;
-    file: string;
-}
+interface Loa { id: number; file: string; }
+interface Registration { id: number; program: { name: string }; loa: Loa | null; }
 
-interface Program {
-    name: string;
-}
-
-interface Registration {
-    id: number;
-    program: Program;
-    loa: Loa | null;
-}
-
-interface PageProps {
-    registrations: Registration[];
-    [key: string]: unknown;
-}
+// TODO: ganti dengan fetch api.get('/student/loa')
+const dummyRegistrations: Registration[] = [
+    { id: 1, program: { name: 'Teknik Informatika' }, loa: { id: 1, file: 'loa/ti.pdf' } },
+    { id: 2, program: { name: 'Sistem Informasi' }, loa: null },
+];
 
 export default function LoaPage() {
-    const { registrations } = usePage<PageProps>().props;
+    const [registrations] = useState<Registration[]>(dummyRegistrations);
 
     return (
         <StudentLayout active="loa">
@@ -30,7 +19,6 @@ export default function LoaPage() {
                 <h1 className="text-2xl font-bold">LOA</h1>
                 <p className="text-gray-500">Download Letter of Acceptance program studi Anda</p>
             </div>
-
             <div className="border bg-white shadow-sm">
                 <table className="w-full text-sm">
                     <thead className="border-b bg-gray-50">
@@ -42,35 +30,21 @@ export default function LoaPage() {
                     </thead>
                     <tbody>
                         {registrations.length === 0 ? (
-                            <tr>
-                                <td colSpan={3} className="px-6 py-8 text-center text-gray-400">
-                                    Belum ada LOA yang tersedia.
-                                </td>
-                            </tr>
+                            <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-400">Belum ada LOA yang tersedia.</td></tr>
                         ) : (
-                            registrations.map((registration) => (
-                                <tr key={registration.id} className="border-b last:border-0">
-                                    <td className="px-6 py-4 text-center">{registration.program.name}</td>
+                            registrations.map((reg) => (
+                                <tr key={reg.id} className="border-b last:border-0">
+                                    <td className="px-6 py-4 text-center">{reg.program.name}</td>
                                     <td className="px-6 py-4 text-center">
-                                        {registration.loa ? (
-                                            <span className="bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Tersedia</span>
-                                        ) : (
-                                            <span className="bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">Belum Tersedia</span>
-                                        )}
+                                        {reg.loa
+                                            ? <span className="bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Tersedia</span>
+                                            : <span className="bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">Belum Tersedia</span>}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {registration.loa ? (
-                                            <a
-                                                href={'/storage/' + registration.loa.file}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm font-semibold underline hover:text-gray-600"
-                                            >
-                                                Download
-                                            </a>
-                                        ) : (
-                                            <span className="text-sm text-gray-400">-</span>
-                                        )}
+                                        {reg.loa
+                                            ? <a href={'/storage/' + reg.loa.file} target="_blank" rel="noopener noreferrer"
+                                                className="text-sm font-semibold underline hover:text-gray-600">Download</a>
+                                            : <span className="text-sm text-gray-400">-</span>}
                                     </td>
                                 </tr>
                             ))

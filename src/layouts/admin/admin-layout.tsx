@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, ContactRound, CreditCard, FileText, KeyRound, Layers, LogOut, User } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -8,19 +8,23 @@ interface Props {
 }
 
 const menuItems = [
-    { key: 'profile', label: 'Profil', href: '/admin/dashboard/profile', icon: <User size={18} /> },
-    { key: 'study-program', label: 'Kelola Program', href: '/admin/dashboard/study-program', icon: <BookOpen size={18} /> },
-    { key: 'payment', label: 'Verifikasi Pembayaran', href: '/admin/dashboard/payment', icon: <CreditCard size={18} /> },
-    { key: 'loa', label: 'Kelola LOA', href: '/admin/dashboard/loa', icon: <FileText size={18} /> },
-    { key: 'contact', label: 'Kontak Pengembang', href: '/admin/dashboard/contact', icon: <ContactRound size={18} /> },
-    { key: 'email-password', label: 'Email dan Password', href: '/admin/dashboard/email-password', icon: <KeyRound size={18} /> },
+    { key: 'profile', label: 'Profil', href: '/admin/profile', icon: <User size={18} /> },
+    { key: 'study-program', label: 'Kelola Program', href: '/admin/study-program', icon: <BookOpen size={18} /> },
+    { key: 'payment', label: 'Verifikasi Pembayaran', href: '/admin/payment', icon: <CreditCard size={18} /> },
+    { key: 'loa', label: 'Kelola LOA', href: '/admin/loa', icon: <FileText size={18} /> },
+    { key: 'contact', label: 'Kontak Pengembang', href: '/admin/contact', icon: <ContactRound size={18} /> },
+    { key: 'email-password', label: 'Email dan Password', href: '/admin/email-password', icon: <KeyRound size={18} /> },
 ];
 
-interface LogoutPopupProps {
-    onClose: () => void;
-}
+function LogoutPopUp({ onClose }: { onClose: () => void }) {
+    const navigate = useNavigate();
 
-function LogoutPopUp({ onClose }: LogoutPopupProps) {
+    const handleLogout = () => {
+        // TODO: api.post('/admin/logout').then(() => navigate('/admin/login'))
+        localStorage.removeItem('token');
+        navigate('/admin/login');
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="w-[350px] bg-white p-6 shadow-lg">
@@ -32,14 +36,9 @@ function LogoutPopUp({ onClose }: LogoutPopupProps) {
                     <button onClick={onClose} className="w-full cursor-pointer bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300">
                         Batal
                     </button>
-                    <Link
-                        href="/admin/logout"
-                        method="post"
-                        as="button"
-                        className="w-full cursor-pointer bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-                    >
+                    <button onClick={handleLogout} className="w-full cursor-pointer bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600">
                         Iya
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
@@ -63,7 +62,7 @@ export default function AdminLayout({ children, active }: Props) {
                         return (
                             <Link
                                 key={item.key}
-                                href={item.href}
+                                to={item.href}
                                 className={`mb-2 flex items-center gap-3 px-4 py-2.5 text-sm transition ${
                                     isActive ? 'bg-black font-semibold text-white' : 'bg-gray-100 text-gray-600'
                                 }`}

@@ -1,4 +1,4 @@
-import AppLayout from '@/layouts/app-layout'; // Ganti pakai AppLayout sementara agar tidak error
+import AdminLayout from '@/layouts/admin/admin-layout';
 import { useState } from 'react';
 
 interface StudyProgram {
@@ -12,52 +12,33 @@ interface StudyProgram {
     status: 'draft' | 'open' | 'closed';
 }
 
-export default function StudyProgram() {
-    // 1. State Data Tabel (Dummy sementara pengganti props backend)
-    const [programs, setPrograms] = useState<StudyProgram[]>([
-        {
-            id: 1,
-            name: 'Fullstack Web Development',
-            description: 'Bootcamp intensif React dan Laravel.',
-            student_quota: 50,
-            price: 2500000,
-            registration_open: '2026-06-15',
-            registration_close: '2026-07-15',
-            status: 'open'
-        }
-    ]);
+const statusStyles = {
+    open: 'bg-green-100 text-green-700',
+    draft: 'bg-yellow-100 text-yellow-700',
+    closed: 'bg-red-100 text-red-700',
+};
 
+// TODO: ganti dengan fetch api.get('/admin/study-program')
+const dummyPrograms: StudyProgram[] = [
+    { id: 1, name: 'Teknik Informatika', description: 'Program TI', student_quota: 30, price: 5000000, registration_open: '2025-01-01', registration_close: '2025-03-01', status: 'open' },
+    { id: 2, name: 'Sistem Informasi', description: 'Program SI', student_quota: 25, price: 4500000, registration_open: '2025-01-01', registration_close: '2025-03-01', status: 'draft' },
+];
+
+const emptyForm = {
+    name: '', description: '', student_quota: '', price: '',
+    registration_open: '', registration_close: '', status: 'draft',
+};
+
+export default function StudyProgram() {
+    const [programs, setPrograms] = useState<StudyProgram[]>(dummyPrograms);
     const [editingProgram, setEditingProgram] = useState<StudyProgram | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [processing, setProcessing] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    // 2. State untuk Form Input
-    const [data, setData] = useState({
-        name: '',
-        description: '',
-        student_quota: '',
-        price: '',
-        registration_open: '',
-        registration_close: '',
-        status: 'draft',
-    });
-
-    const reset = () => {
-        setData({
-            name: '',
-            description: '',
-            student_quota: '',
-            price: '',
-            registration_open: '',
-            registration_close: '',
-            status: 'draft',
-        });
-        setErrors({});
-    };
+    const [data, setData] = useState(emptyForm);
+    const [errors, setErrors] = useState<Partial<typeof emptyForm>>({});
 
     function handleAdd() {
-        reset();
+        setData(emptyForm);
         setEditingProgram(null);
         setShowForm(true);
     }
@@ -80,213 +61,165 @@ export default function StudyProgram() {
         e.preventDefault();
         setProcessing(true);
 
-        // Simulasi Loading API (0.5 detik) lalu update tabel
+        // TODO: ganti dengan api.post / api.put ke backend
         setTimeout(() => {
             if (editingProgram) {
-                // Proses Edit Data
-                setPrograms(programs.map(p => p.id === editingProgram.id ? { 
-                    ...p, 
-                    ...data, 
-                    student_quota: Number(data.student_quota), 
-                    price: Number(data.price),
-                    status: data.status as 'draft' | 'open' | 'closed'
-                } : p));
+                setPrograms(programs.map(p => p.id === editingProgram.id
+                    ? { ...editingProgram, ...data, student_quota: Number(data.student_quota), price: Number(data.price), status: data.status as StudyProgram['status'] }
+                    : p
+                ));
             } else {
-                // Proses Tambah Data Baru
-                const newProgram = {
-                    ...data,
+                setPrograms([...programs, {
                     id: Date.now(),
+                    ...data,
                     student_quota: Number(data.student_quota),
                     price: Number(data.price),
-                    status: data.status as 'draft' | 'open' | 'closed'
-                };
-                setPrograms([...programs, newProgram]);
+                    status: data.status as StudyProgram['status'],
+                }]);
             }
-
             setProcessing(false);
             setShowForm(false);
-            reset();
-        }, 500);
+            setData(emptyForm);
+        }, 1000);
     }
 
     function handleDelete(id: number) {
         if (confirm('Yakin ingin menghapus program ini?')) {
+            // TODO: ganti dengan api.delete('/admin/study-program/' + id)
             setPrograms(programs.filter(p => p.id !== id));
         }
     }
 
     return (
-        <AppLayout>
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">Kelola Program</h1>
-                        <p className="text-gray-500">Kelola program studi independen</p>
-                    </div>
-                    <button onClick={handleAdd} className="cursor-pointer bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 rounded-md">
-                        Tambah Program
-                    </button>
+        <AdminLayout active="study-program">
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">Kelola Program</h1>
+                    <p className="text-gray-500">Kelola program studi independen</p>
                 </div>
+                <button onClick={handleAdd} className="cursor-pointer bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800">
+                    Tambah Program
+                </button>
+            </div>
 
-                {showForm && (
-                    <div className="mb-6 rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                        <h2 className="mb-4 font-bold">{editingProgram ? 'Edit Program' : 'Tambah Program'}</h2>
-                        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Nama Program</label>
-                                <input
-                                    type="text"
-                                    value={data.name}
-                                    onChange={(e) => setData({ ...data, name: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+            {showForm && (
+                <div className="mb-6 border bg-white p-6 shadow-sm">
+                    <h2 className="mb-4 font-bold">{editingProgram ? 'Edit Program' : 'Tambah Program'}</h2>
+                    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Nama Program</label>
+                            <input type="text" value={data.name}
+                                onChange={(e) => setData({ ...data, name: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm" />
+                            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                        </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Kuota</label>
-                                <input
-                                    type="number"
-                                    value={data.student_quota}
-                                    onChange={(e) => setData({ ...data, student_quota: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Kuota</label>
+                            <input type="number" value={data.student_quota}
+                                onChange={(e) => setData({ ...data, student_quota: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm" />
+                            {errors.student_quota && <p className="mt-1 text-xs text-red-500">{errors.student_quota}</p>}
+                        </div>
 
-                            <div className="col-span-2">
-                                <label className="mb-1 block text-sm font-semibold">Deskripsi</label>
-                                <textarea
-                                    value={data.description}
-                                    onChange={(e) => setData({ ...data, description: e.target.value })}
-                                    rows={3}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+                        <div className="col-span-2">
+                            <label className="mb-1 block text-sm font-semibold">Deskripsi</label>
+                            <textarea value={data.description}
+                                onChange={(e) => setData({ ...data, description: e.target.value })}
+                                rows={3} className="w-full border px-3 py-2 text-sm" />
+                            {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
+                        </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Harga</label>
-                                <input
-                                    type="number"
-                                    value={data.price}
-                                    onChange={(e) => setData({ ...data, price: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Harga</label>
+                            <input type="number" value={data.price}
+                                onChange={(e) => setData({ ...data, price: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm" />
+                            {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+                        </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Status</label>
-                                <select
-                                    value={data.status}
-                                    onChange={(e) => setData({ ...data, status: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                >
-                                    <option value="draft">Draft</option>
-                                    <option value="open">Open</option>
-                                    <option value="closed">Closed</option>
-                                </select>
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Status</label>
+                            <select value={data.status}
+                                onChange={(e) => setData({ ...data, status: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm">
+                                <option value="draft">Draft</option>
+                                <option value="open">Open</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Pendaftaran Dibuka</label>
-                                <input
-                                    type="date"
-                                    value={data.registration_open}
-                                    onChange={(e) => setData({ ...data, registration_open: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Pendaftaran Dibuka</label>
+                            <input type="date" value={data.registration_open}
+                                onChange={(e) => setData({ ...data, registration_open: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm" />
+                        </div>
 
-                            <div>
-                                <label className="mb-1 block text-sm font-semibold">Pendaftaran Ditutup</label>
-                                <input
-                                    type="date"
-                                    value={data.registration_close}
-                                    onChange={(e) => setData({ ...data, registration_close: e.target.value })}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background"
-                                    required
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold">Pendaftaran Ditutup</label>
+                            <input type="date" value={data.registration_close}
+                                onChange={(e) => setData({ ...data, registration_close: e.target.value })}
+                                className="w-full border px-3 py-2 text-sm" />
+                        </div>
 
-                            <div className="col-span-2 flex gap-2 mt-2">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-                                >
-                                    {processing ? 'Menyimpan...' : 'Simpan'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="rounded-md border px-4 py-2 text-sm font-semibold hover:bg-muted"
-                                >
-                                    Batal
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                )}
+                        <div className="col-span-2 flex gap-2">
+                            <button type="submit" disabled={processing}
+                                className="bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50">
+                                {processing ? 'Menyimpan...' : 'Simpan'}
+                            </button>
+                            <button type="button" onClick={() => setShowForm(false)}
+                                className="border px-4 py-2 text-sm font-semibold hover:bg-gray-100">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
-                <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
+            <div className="border bg-white shadow-sm">
+                <table className="w-full text-sm">
+                    <thead className="border-b">
+                        <tr>
+                            <th className="px-6 py-3 text-center font-semibold">Nama Program</th>
+                            <th className="px-6 py-3 text-center font-semibold">Kuota</th>
+                            <th className="px-6 py-3 text-center font-semibold">Harga</th>
+                            <th className="px-6 py-3 text-center font-semibold">Pendaftaran</th>
+                            <th className="px-6 py-3 text-center font-semibold">Status</th>
+                            <th className="px-6 py-3 text-center font-semibold">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {programs.length === 0 ? (
                             <tr>
-                                <th className="px-6 py-3 text-center font-semibold">Nama Program</th>
-                                <th className="px-6 py-3 text-center font-semibold">Kuota</th>
-                                <th className="px-6 py-3 text-center font-semibold">Harga</th>
-                                <th className="px-6 py-3 text-center font-semibold">Pendaftaran</th>
-                                <th className="px-6 py-3 text-center font-semibold">Status</th>
-                                <th className="px-6 py-3 text-center font-semibold">Aksi</th>
+                                <td colSpan={6} className="px-6 py-8 text-center text-gray-400">Belum ada program studi.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {programs.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
-                                        Belum ada program studi.
+                        ) : (
+                            programs.map((program) => (
+                                <tr key={program.id} className="border-b last:border-0">
+                                    <td className="px-6 py-4 text-center">{program.name}</td>
+                                    <td className="px-6 py-4 text-center">{program.student_quota}</td>
+                                    <td className="px-6 py-4 text-center">Rp {Number(program.price).toLocaleString('id-ID')}</td>
+                                    <td className="px-6 py-4 text-center">{program.registration_open} s/d {program.registration_close}</td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`px-2 py-0.5 text-xs font-semibold ${statusStyles[program.status]}`}>
+                                            {program.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <button onClick={() => handleEdit(program)}
+                                                className="cursor-pointer text-sm font-semibold text-blue-500 hover:text-blue-700">Edit</button>
+                                            <button onClick={() => handleDelete(program.id)}
+                                                className="cursor-pointer text-sm font-semibold text-red-500 hover:text-red-700">Hapus</button>
+                                        </div>
                                     </td>
                                 </tr>
-                            ) : (
-                                programs.map((program) => (
-                                    <tr key={program.id} className="border-b last:border-0 hover:bg-muted/50">
-                                        <td className="px-6 py-4 text-center">{program.name}</td>
-                                        <td className="px-6 py-4 text-center">{program.student_quota}</td>
-                                        <td className="px-6 py-4 text-center">Rp {Number(program.price).toLocaleString('id-ID')}</td>
-                                        <td className="px-6 py-4 text-center">
-                                            {program.registration_open} s/d {program.registration_close}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={`px-2 py-1 rounded-md text-xs font-semibold ${program.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                                {program.status.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex justify-center gap-3">
-                                                <button
-                                                    onClick={() => handleEdit(program)}
-                                                    className="cursor-pointer text-sm font-semibold text-blue-500 hover:text-blue-700"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(program.id)}
-                                                    className="cursor-pointer text-sm font-semibold text-red-500 hover:text-red-700"
-                                                >
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }
