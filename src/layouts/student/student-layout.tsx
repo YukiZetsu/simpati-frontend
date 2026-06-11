@@ -1,6 +1,6 @@
-import { Link } from '@inertiajs/react';
 import { BookOpen, ContactRound, CreditCard, FileText, KeyRound, Layers, LogOut, User } from 'lucide-react';
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Props {
     children: React.ReactNode;
@@ -8,12 +8,12 @@ interface Props {
 }
 
 const menuItems = [
-    { key: 'profile', label: 'Profil', href: '/student/dashboard/profile', icon: <User size={18} /> },
-    { key: 'programs', label: 'Program Studi', href: '/student/dashboard/programs', icon: <BookOpen size={18} /> },
-    { key: 'payment', label: 'Pembayaran', href: '/student/dashboard/payment', icon: <CreditCard size={18} /> },
-    { key: 'loa', label: 'LOA', href: '/student/dashboard/loa', icon: <FileText size={18} /> },
-    { key: 'contact', label: 'Kontak Admin', href: '/student/dashboard/contact', icon: <ContactRound size={18} /> },
-    { key: 'email-password', label: 'Email dan Password', href: '/student/dashboard/email-password', icon: <KeyRound size={18} /> },
+    { key: 'profile', label: 'Profil', href: '/student/profile', icon: <User size={18} /> },
+    { key: 'programs', label: 'Program Studi', href: '/student/programs', icon: <BookOpen size={18} /> },
+    { key: 'payment', label: 'Pembayaran', href: '/student/payment', icon: <CreditCard size={18} /> },
+    { key: 'loa', label: 'LOA', href: '/student/loa', icon: <FileText size={18} /> },
+    { key: 'contact', label: 'Kontak Admin', href: '/student/contact', icon: <ContactRound size={18} /> },
+    { key: 'email-password', label: 'Email dan Password', href: '/student/email-password', icon: <KeyRound size={18} /> },
 ];
 
 interface LogoutPopupProps {
@@ -21,6 +21,25 @@ interface LogoutPopupProps {
 }
 
 function LogoutPopUp({ onClose }: LogoutPopupProps) {
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/student/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            navigate('/student/login');
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="w-[350px] bg-white p-6 shadow-lg">
@@ -32,14 +51,12 @@ function LogoutPopUp({ onClose }: LogoutPopupProps) {
                     <button onClick={onClose} className="w-full cursor-pointer bg-gray-200 px-4 py-2 text-sm hover:bg-gray-300">
                         Batal
                     </button>
-                    <Link
-                        href="/student/logout"
-                        method="post"
-                        as="button"
+                    <button
+                        onClick={handleLogout}
                         className="w-full cursor-pointer bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
                     >
                         Iya
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
@@ -63,7 +80,7 @@ export default function StudentLayout({ children, active }: Props) {
                         return (
                             <Link
                                 key={item.key}
-                                href={item.href}
+                                to={item.href}  // ← href diganti to
                                 className={`mb-2 flex items-center gap-3 px-4 py-2.5 text-sm transition ${
                                     isActive ? 'bg-black font-semibold text-white' : 'bg-gray-100 text-gray-600'
                                 }`}
